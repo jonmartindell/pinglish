@@ -82,6 +82,21 @@ class PinglishTest < MiniTest::Unit::TestCase
     assert_equal "ok", json["status"]
   end
 
+  def test_with_error_handler
+    mock_reporter = MiniTest::Mock.new
+    app = build_app(error_reporter: mock_reporter) do |ping|
+      ping.check(:db) { :ok }
+      ping.check(:fail) { false }
+    end
+
+    mock_reporter.expect :call, nil, [:fail, false]
+
+    session = Rack::Test::Session.new(app)
+    session.get "/_ping"
+
+    assert mock_reporter.verify
+  end
+
   def test_with_check_that_raises
     app = build_app do |ping|
       ping.check(:db) { :ok }

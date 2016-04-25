@@ -20,7 +20,7 @@ class Pinglish
 
   # Create a new instance of the middleware wrapping `app`, with an
   # optional `:path` (default: `"/_ping"`), `:max` timeout in seconds
-  # (default: `29`), `:error_reporter` class (default: none),
+  # (default: `29`), `:error_reporter` (default: ->(name,value){}),
   # and behavior `block`.
 
   def initialize(app, options = nil, &block)
@@ -29,7 +29,7 @@ class Pinglish
     @app               = app
     @checks            = {}
     @max               = options[:max] || 29 # seconds
-    @error_reporter    = options[:error_reporter]
+    @error_reporter    = options[:error_reporter] || ->(name,value){}
     @path              = options[:path] || "/_ping"
 
     yield self if block_given?
@@ -77,7 +77,7 @@ class Pinglish
             # If the check failed because it timed out, its name is
             # added to a `timeouts` array instead.
 
-            @error_reporter.new(name, value).report  if @error_reporter
+            @error_reporter.call(name, value)
 
             key = timeout?(value) ? :timeouts : :failures
             (data[key] ||= []) << name
